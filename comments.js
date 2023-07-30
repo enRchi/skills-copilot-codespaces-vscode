@@ -1,25 +1,57 @@
 // create web Server
-// Create DB Server
-// Create API Server
-// Create API
-// Create API Router
-// Create API Controller
-// Create API Model
-// Create API View
+var express = require('express');
+var app = express();
+var fs = require('fs');
+var bodyParser = require('body-parser');
+var multer = require('multer');
+var upload = multer({ dest: 'uploads/' });
+var path = require('path');
+var mongoose = require('mongoose');
+var Schema = mongoose.Schema;
 
-const express = require('express');
-const router = express.Router();
+// connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/Comments');
 
+// create model
+var commentSchema = new Schema({
+    name: String,
+    comment: String,
+    date: { type: Date, default: Date.now }
+});
 
-const commentController = require('../controllers/comments');
+var Comment = mongoose.model('Comment', commentSchema);
 
-// Create
-router.post('/', commentController.create);
-// Read
-router.get('/:id', commentController.read);
-// Update
-router.put('/:id', commentController.update);
-// Delete
-router.delete('/:id', commentController.delete);
+// use body-parser
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
-module.exports = router;
+// set view engine
+app.set('views', './views');
+app.set('view engine', 'pug');
+
+// set public directory
+app.use(express.static('public'));
+
+// set router
+app.get('/comments/new', function (req, res) {
+    res.render('new');
+});
+
+app.get('/comments', function (req, res) {
+    Comment.find({}, function (err, comments) {
+        if (err) return res.json(err);
+        res.render('index', { comments: comments });
+    });
+});
+
+app.post('/comments', function (req, res) {
+    Comment.create(req.body, function (err, comment) {
+        if (err) return res.json(err);
+        res.redirect('/comments');
+    });
+});
+
+// set server port
+app.listen(3000, function () {
+    console.log('Server On!');
+});
